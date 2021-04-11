@@ -1,0 +1,2 @@
+adbutils==0.9.1
+uiautomator2==2.13.0
