@@ -21,8 +21,8 @@ wifi_219_name = "219"
 wifi_matthew_name = "Matthew_2.4G"
 wifi_matthew_password = "785174509"
 wifi_switch_widget_resource_id = "com.android.settings:id/switch_widget"
-wifi_name = wifi_matthew_name
-wifi_password = wifi_matthew_password
+wifi_name = wifi_219_name
+wifi_password = wifi_219_password
 
 
 def strip_str_for_prop(prop):
@@ -74,7 +74,7 @@ def connect_to_wifi(wifi_name, wifi_password):
 if __name__ == '__main__':
     device_dict = get_device()
     for device in device_dict.values():
-        print("device model: " + device.model + ", is online: " + str(device.isOnline()))
+        print("current test device model: " + device.model + ", is online: " + str(device.isOnline()))
         if not device.isOnline():
             continue
         connected_device = uiautomator2.connect_usb(serial=device.deviceId)
