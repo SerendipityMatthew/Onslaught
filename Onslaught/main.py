@@ -1,12 +1,12 @@
-import uiautomator2 as uiautomator2
-import adbutils as adbutils
-import Device as Device
+import os
 import subprocess as subprocess
 import time as time
-import Apk_Info as  Apk_Info
-import os
-import asyncio
 
+import uiautomator2 as uiautomator2
+from uiautomator2 import UiObjectNotFoundError
+
+import Apk_Info as Apk_Info
+import util.Utils as Utils
 from Device import Android_Device
 
 adb_devices_cmd = "adb devices"
@@ -42,32 +42,15 @@ def get_device():
         split_result = adb_devices_result[1].split("\n")
         devices_list = split_result[1:split_result.__len__() - 1]
         for devices_id_record in devices_list:
-            device_id = devices_id_record.split("\t")[0]
+            serial = devices_id_record.split("\t")[0]
             is_online = devices_id_record.split("\t")[1]
             print("is online = " + str(is_online))
             key_is_online = True
             if is_online.__contains__("offline"):
                 key_is_online = False
 
-            adb_prop_cmd = "adb -s " + device_id + " shell getprop"
-            adb_prop_cmd_result = subprocess.getstatusoutput(adb_prop_cmd)
-            product_model = ""
-            build_version_release = ""
-            product_locale_language = ""
-            if adb_prop_cmd_result[0] == 0:
-                for prop in adb_prop_cmd_result[1].split("\n"):
-                    if prop.__contains__(key_product_model):
-                        product_model = strip_str_for_prop(prop.split(":")[1])
+            android_device = Utils.get_device_info(serial, key_is_online)
 
-                    if prop.__contains__(key_build_version_release):
-                        build_version_release = strip_str_for_prop(prop.split(":")[1])
-
-                    if prop.__contains__(key_product_locale_language):
-                        product_locale_language = strip_str_for_prop(prop.split(":")[1])
-
-            android_device = Device.Android_Device(device_id, product_model,
-                                                   build_version_release, key_is_online,
-                                                   product_locale_language)
             device_dict[android_device.deviceId] = android_device
     return device_dict
 
@@ -80,11 +63,20 @@ def connect_to_wifi(wifi_name, wifi_password):
         connected_device.swipe(300, 900, 300, 200)
 
     connected_device(text=wifi_name).click()
-    connected_device.send_keys(wifi_password, clear=True)
-    if connected_device(text="连接").exists():
-        connected_device(text="连接").click()
-    if connected_device(text="Connect").exists():
-        connected_device(text="Connect").click()
+    """
+        在某些情况下, 这个设备已经连接过这个 WiFi 了, 执行 sendkeys 会报错, 
+    """
+    try:
+        connected_device.send_keys(wifi_password, clear=True)
+    except UiObjectNotFoundError as error:
+        print(error)
+    finally:
+        if connected_device(text="连接").exists():
+            connected_device(text="连接").click()
+        if connected_device(text="Connect").exists():
+            connected_device(text="Connect").click()
+        if connected_device(text="CONNECT").exists():
+            connected_device(text="CONNECT").click()
     time.sleep(3)
 
 
@@ -151,6 +143,7 @@ if __name__ == '__main__':
             continue
         connected_device = uiautomator2.connect_usb(serial=device.deviceId)
         get_app_info(connected_device, current_test_package)
+        connect_to_wifi("Matthew_5G","785714509")
         print(connected_device.device_info)
         # asyncio.run(catch_device_log(device, current_test_package))
-        catch_device_log(device, current_test_package)
+        # catch_device_log(device, current_test_package)
