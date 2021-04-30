@@ -143,7 +143,7 @@ if __name__ == '__main__':
             continue
         connected_device = uiautomator2.connect_usb(serial=device.deviceId)
         get_app_info(connected_device, current_test_package)
-        connect_to_wifi("Matthew_5G","785714509")
+        connect_to_wifi("Matthew_5G","785174509")
         print(connected_device.device_info)
         # asyncio.run(catch_device_log(device, current_test_package))
         # catch_device_log(device, current_test_package)
