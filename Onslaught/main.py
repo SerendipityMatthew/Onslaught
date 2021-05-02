@@ -10,6 +10,7 @@ from uiautomator2 import UiObjectNotFoundError
 import Apk_Info as Apk_Info
 import util.Utils as Utils
 from Device import Android_Device
+from TestCase import TestCase
 
 adb_devices_cmd = "adb devices"
 key_build_version_release = "ro.build.version.release"
@@ -23,6 +24,8 @@ nexus_settings_activity = "com.android.settings.Settings"
 rom_settings_activity = "com.android.settings.MainSettings"
 rom_settings_wifi_activity = "com.android.settings.Settings$WifiSettingsActivity"
 wifi_connect_resource_id = "android:id/button1"
+onslaughtapp_package = "me.xuwanjin.onslaughtapp"
+onslaughtapp_resource_id = onslaughtapp_package + ":id/"
 wifi_219_password = "785174509I350"
 wifi_219_name = "219"
 wifi_matthew_name = "Matthew_2.4G"
@@ -159,6 +162,7 @@ def start_and_stop_app(device_serial: str, package_name: str):
     uiautomator.app_start(package_name=package_name)
     time.sleep(5)
     uiautomator.app_stop(package_name=package_name)
+    return True
 
 
 if __name__ == '__main__':
@@ -174,14 +178,16 @@ if __name__ == '__main__':
     """
     # 1. 获取设备信息
     device_dict = get_device()
+    test_case_list = []
     for device in device_dict.values():
         print("current test device model: " + device.model + ", is online: " + str(device.isOnline()))
         if not device.isOnline():
             continue
 
         connected_device = uiautomator2.connect_usb(serial=device.deviceId)
+        Utils.set_device_never_sleep(device.deviceId)
         # 2. 获取 app 信息
-        get_app_info(connected_device, current_test_package)
+        app_info = get_app_info(connected_device, current_test_package)
         # 3. 执行收集手机log的任务
         """
             暂时以线程的方式实现
@@ -189,14 +195,19 @@ if __name__ == '__main__':
         thread = threading.Thread(target=catch_device_log, args=(device, current_test_package))
         thread.start()
         # 4. 切换设备的 WiFi
-        connect_to_wifi("Matthew_5G", "785174509")
-        connected_device.press("home")
-        for i in range(100):
-            time.sleep(3)
-            execute_cmd(start_and_stop_app(device.deviceId, current_test_package))
+        wifi_list = Utils.parse_wifi_list_json()
+        for wifi_item in wifi_list:
+            connect_to_wifi(wifi_item.ssid, wifi_item.password)
+            connected_device.press("home")
+            for i in range(4):
+                time.sleep(3)
+                test_result = execute_cmd(start_and_stop_app(device.deviceId, current_test_package))
+                test_case = TestCase(device, app_info, test_result="pass", wifi_info=wifi_item,
+                                     failed_reason="")
+                test_case_list.append(test_case)
+                print("the test result: " + str(test_result))
 
-        print(connected_device.device_info)
-        print("============ device = " + str(device))
-        hello = Utils.get_running_app_pid("com.xuwanjin.myapplication", device.deviceId)
+            print(connected_device.device_info)
 
-        print("----------------- " + str(hello))
+    for case in test_case_list:
+        print("   " + str(case))

@@ -1,7 +1,10 @@
+import json
+import os
 import subprocess as subprocess
 import socket
 import uiautomator2 as uiautomator2
 import Device
+from WiFi_Info import WiFi_Info
 
 key_build_version_release = "ro.build.version.release"
 key_product_model = "ro.product.model"
@@ -172,3 +175,39 @@ def get_running_app_pid(package_name: str, device_serial: str):
 
     print("the current package " + package_name + ", the pid is " + pid)
     return pid
+
+
+def is_onslaught_app_installed(device_serial):
+    package_name = "me.xuwanjin.onslaughtapp"
+    package_location_cmd = "adb -s " + device_serial + " shell pm path " + package_name
+    result = subprocess.getstatusoutput(package_location_cmd)
+    if result[1].__contains__(package_name):
+        return True
+    return False
+
+
+def set_device_never_sleep(device_serial: str):
+    """
+    设置设备永不睡眠的模式
+    :param device_serial:
+    :return:
+    """
+    never_sleep_cmd = "adb -s " + device_serial + " shell settings put system screen_off_timeout 2147483647"
+    subprocess.getstatusoutput(never_sleep_cmd)
+
+
+def parse_wifi_list_json():
+    wifi_list = []
+    current_path = os.getcwd()
+    print("the current path " + str(current_path))
+    with open(file="wifi_list") as wifi_json_file:
+        line = wifi_json_file.readline()
+        while line:
+            wifi_info_group = line.split(",")
+            if wifi_info_group.__len__() == 2:
+                ssid = wifi_info_group[0].split("=")[1]
+                password = wifi_info_group[1].split("=")[1].replace("\n", "")
+                wifi_info = WiFi_Info(ssid, password)
+                wifi_list.append(wifi_info)
+                line = wifi_json_file.readline()
+    return wifi_list

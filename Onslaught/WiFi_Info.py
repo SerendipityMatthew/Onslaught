@@ -1,5 +1,5 @@
 class WiFi_Info(object):
-    def __init__(self, ssid, password):
+    def __init__(self, ssid:str, password:str):
         self.ssid = ssid
         self.password = password
 
