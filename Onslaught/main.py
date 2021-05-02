@@ -56,7 +56,7 @@ def get_device():
 
             android_device = Utils.get_device_info(serial, key_is_online)
 
-            device_dict[android_device.deviceId] = android_device
+            device_dict[android_device.device_serial] = android_device
     return device_dict
 
 
@@ -85,11 +85,11 @@ def connect_to_wifi(wifi_name, wifi_password):
     time.sleep(3)
 
 
-def connect_to_wifi_with_app(uiauto_device:uiautomator2, wifi_name, wifi_password):
-    is_existed = Utils.is_onslaught_app_installed(uiauto_device.deviceId)
+def connect_to_wifi_with_app(uiauto_device:Android_Device, wifi_name, wifi_password):
+    is_existed = Utils.is_onslaught_app_installed(uiauto_device.device_serial)
     save_setting_id = "com.android.settings:id/save"
     if is_existed:
-        uiautomator = uiautomator2.connect_usb(serial=uiauto_device.deviceId)
+        uiautomator = uiautomator2.connect_usb(serial=uiauto_device.device_serial)
         uiautomator.app_start(package_name=onslaughtapp_package)
         uiautomator(resourceId=onslaughtapp_resource_id + "wifi_ssid").clear_text()
         uiautomator(resourceId=onslaughtapp_resource_id + "wifi_ssid").set_text(wifi_name)
@@ -111,7 +111,7 @@ def catch_device_log(device: Android_Device, package_name: str):
     """
     再次检查一下设备是否在线
     """
-    realTimeDevice = get_device()[device.deviceId]
+    realTimeDevice = get_device()[device.device_serial]
     print("check the device is online: " + str(realTimeDevice.isOnline()))
     if not realTimeDevice.isOnline():
         return
@@ -123,7 +123,7 @@ def catch_device_log(device: Android_Device, package_name: str):
     """
      路径保持为 包名/设备model名称/设备的device_serial/当前日期的+ 小时.log
     """
-    log_path = current_path + os.sep + package_name + os.sep + device.model + os.sep + device.deviceId
+    log_path = current_path + os.sep + package_name + os.sep + device.model + os.sep + device.device_serial
 
     if not os.path.exists(log_path):
         os.makedirs(log_path)
@@ -131,7 +131,7 @@ def catch_device_log(device: Android_Device, package_name: str):
     log_file_path = log_path + "/" + current_test_date + ".log"
 
     print("the log path which we want to save: " + log_file_path)
-    logcat_cmd = "adb -s " + realTimeDevice.deviceId + " logcat -b all"
+    logcat_cmd = "adb -s " + realTimeDevice.device_serial + " logcat -b all"
     log_file = open(log_file_path, "w")
     result = subprocess.Popen(logcat_cmd, shell=True, stdout=subprocess.PIPE)
     for line in iter(result.stdout.readline, "b"):
@@ -204,8 +204,8 @@ if __name__ == '__main__':
         if not device.isOnline():
             continue
 
-        connected_device = uiautomator2.connect_usb(serial=device.deviceId)
-        Utils.set_device_never_sleep(device.deviceId)
+        connected_device = uiautomator2.connect_usb(serial=device.device_serial)
+        Utils.set_device_never_sleep(device.device_serial)
         # 2. 获取 app 信息
         app_info = get_app_info(connected_device, current_test_package)
         # 3. 执行收集手机log的任务
@@ -223,7 +223,7 @@ if __name__ == '__main__':
             connected_device.press("home")
             for i in range(4):
                 time.sleep(3)
-                test_result = execute_cmd(start_and_stop_app(device.deviceId, current_test_package))
+                test_result = execute_cmd(start_and_stop_app(device.device_serial, current_test_package))
                 test_case = TestCase(device, app_info, test_result="pass",
                                      wifi_info=wifi_item, failed_reason="")
                 test_case_list.append(test_case)
