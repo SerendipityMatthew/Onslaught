@@ -2,7 +2,7 @@ class Android_Device(object):
     # device_id 设备的 device id
     # model 设备的 model name
     # version 设备的android 版本
-    def __init__(self, device_id, model, version, language, is_online=True):
+    def __init__(self, device_id, model, version, language, is_online=False):
         self.deviceId = device_id
         self.model = model
         self.version = version
@@ -16,3 +16,6 @@ class Android_Device(object):
 
     def isOnline(self):
         return self.is_online
+
+    def __str__(self):
+        return str(self.__dict__)

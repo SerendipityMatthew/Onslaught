@@ -1,5 +1,7 @@
+import asyncio
 import os
 import subprocess as subprocess
+import threading
 import time as time
 
 import uiautomator2 as uiautomator2
@@ -13,7 +15,7 @@ adb_devices_cmd = "adb devices"
 key_build_version_release = "ro.build.version.release"
 key_product_model = "ro.product.model"
 key_product_locale_language = "ro.product.locale.language"
-deye_package = "com.23"
+deye_package = "com.deye"
 current_test_package = deye_package
 
 settings_package = "com.android.settings"
@@ -36,7 +38,7 @@ def strip_str_for_prop(prop):
 
 def get_device():
     adb_devices_result = subprocess.getstatusoutput(adb_devices_cmd)
-    print(adb_devices_result)
+    print("list all android device: " + str(adb_devices_result))
     device_dict = {}
     if adb_devices_result[0] == 0:
         split_result = adb_devices_result[1].split("\n")
@@ -83,30 +85,37 @@ def connect_to_wifi(wifi_name, wifi_password):
 def catch_device_log(device: Android_Device, package_name: str):
     if not device.isOnline():
         return
-    # 再次检查一下设备是否在线
+    """
+    再次检查一下设备是否在线
+    """
     realTimeDevice = get_device()[device.deviceId]
     print("-----------------" + str(realTimeDevice.isOnline()))
     if not realTimeDevice.isOnline():
         return
 
     # log 的路径  包名 /  日期
-    date = time.strftime("%Y-%m-%d_%H", time.localtime())
+    current_test_date = time.strftime("%Y-%m-%d_%H", time.localtime())
+    print("the current test date: " + str(current_test_date))
     current_path = os.getcwd()
 
     log_path = current_path + "/" + package_name
     if not os.path.exists(log_path):
         os.makedirs(log_path)
 
-    log_file_path = log_path + "/" + date + ".log"
+    log_file_path = log_path + "/" + current_test_date + ".log"
 
-    print(log_file_path)
+    print("the log path which we want to save: " + log_file_path)
     logcat_cmd = "adb -s " + realTimeDevice.deviceId + " logcat -b all"
     log_file = open(log_file_path, "w")
-    print("==========")
     result = subprocess.Popen(logcat_cmd, shell=True, stdout=subprocess.PIPE)
     for line in iter(result.stdout.readline, "b"):
-        log_file.write(line.decode('utf-8', 'ignore'))
-        log_file.flush()
+        current_date = time.strftime("%Y-%m-%d_%H", time.localtime())
+        if current_date.__eq__(current_test_date):
+            log_file.write(line.decode('utf-8', 'ignore'))
+            log_file.flush()
+        else:
+            print("进入下一个小时的, 收集手机 log 的阶段")
+            catch_device_log(device, package_name)
 
 
 def get_app_info(connected_device: uiautomator2, package_name: str):
@@ -115,7 +124,6 @@ def get_app_info(connected_device: uiautomator2, package_name: str):
 
     package = package_name.split(".")
 
-    print("======== ", str(package.__len__()))
     if package.__len__() < 2:
         return
 
@@ -131,7 +139,7 @@ def get_app_info(connected_device: uiautomator2, package_name: str):
         print("not found any app in device " + str(connected_device.device_info["model"] + ", device serial  " +
                                                    str(connected_device.device_info["serial"])))
 
-    print("the app info " + app_info)
+    print("the app info: " + str(app_info))
     return app_info
 
 
@@ -143,7 +151,14 @@ if __name__ == '__main__':
             continue
         connected_device = uiautomator2.connect_usb(serial=device.deviceId)
         get_app_info(connected_device, current_test_package)
-        connect_to_wifi("Matthew_5G","785174509")
+        connect_to_wifi("Matthew_5G", "785174509")
+        """
+            暂时以线程的方式实现
+        """
+        thread = threading.Thread(target=catch_device_log, args=(device, current_test_package))
+        thread.start()
         print(connected_device.device_info)
-        # asyncio.run(catch_device_log(device, current_test_package))
-        # catch_device_log(device, current_test_package)
+        print("============ device = " + str(device))
+        hello = Utils.get_running_app_pid("com.xuwanjin.myapplication", device.deviceId)
+
+        print("----------------- " + str(hello))

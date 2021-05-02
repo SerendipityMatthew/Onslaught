@@ -1,6 +1,6 @@
 import subprocess as subprocess
 import socket
-
+import uiautomator2 as uiautomator2
 import Device
 
 key_build_version_release = "ro.build.version.release"
@@ -141,10 +141,34 @@ def switch_on_device_screen(device_serial: str):
     else:
         switch_on_cmd = "adb -s " + device_serial + " shell input keyevent 26"
     is_screen_on = is_device_screen_on(device_serial)
-    print("=========== : switch_on_device_screen: " + str(is_screen_on))
-    if is_screen_on:
+    print("the current device " + device_serial + ", the screen is " + str(is_screen_on))
 
-        print("+++++++++++++++")
+    if is_screen_on:
+        pass
     else:
-        print("------------   " + switch_on_cmd)
         subprocess.getstatusoutput(switch_on_cmd)
+
+
+def get_running_app_pid(package_name: str, device_serial: str):
+    """
+    获取设备上特定包名的进程pid
+    :param package_name: 包名
+    :param device_serial: 所在设备的 device serial
+    :return: 返回进程的 pid, 如果没有在运行当中返回 0
+    """
+    adb_pid_cmd = "adb -s " + device_serial + " shell dumpsys activity processes"
+    result = subprocess.getstatusoutput(adb_pid_cmd)
+    process_key_word = ": ProcessRecord{"
+    pid: int = 0
+    for line in result[1].split("\n"):
+        if line.__contains__(process_key_word):
+            if line.__contains__("PID #"):
+                process_info = line.split(":")
+                if process_info[2].__contains__(package_name):
+                    package_uid = process_info[2]
+                    if package_uid.__contains__("/"):
+                        if package_uid.split("/")[0].__eq__(package_name):
+                            pid = int(process_info[0].split("#")[1])
+
+    print("the current package " + package_name + ", the pid is " + pid)
+    return pid
