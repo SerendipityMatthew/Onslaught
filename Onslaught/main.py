@@ -97,8 +97,11 @@ def catch_device_log(device: Android_Device, package_name: str):
     current_test_date = time.strftime("%Y-%m-%d_%H", time.localtime())
     print("the current test date: " + str(current_test_date))
     current_path = os.getcwd()
+    """
+     路径保持为 包名/设备model名称/设备的device_serial/当前日期的+ 小时.log
+    """
+    log_path = current_path + os.sep + package_name + os.sep + device.model + os.sep + device.deviceId
 
-    log_path = current_path + "/" + package_name
     if not os.path.exists(log_path):
         os.makedirs(log_path)
 
@@ -143,20 +146,55 @@ def get_app_info(connected_device: uiautomator2, package_name: str):
     return app_info
 
 
+def execute_cmd(func):
+    def wrapper():
+        print("%s is running" % func.__name__)
+        return func()  # 把 foo 当做参数传递进来时，执行func()就相当于执行foo()
+
+    return wrapper
+
+
+def start_and_stop_app(device_serial: str, package_name: str):
+    uiautomator = uiautomator2.connect_usb(serial=device_serial)
+    uiautomator.app_start(package_name=package_name)
+    time.sleep(5)
+    uiautomator.app_stop(package_name=package_name)
+
+
 if __name__ == '__main__':
+    """
+     1. 获取设备信息
+     2. 获取 app 信息
+     3. 执行收集手机log的任务
+     4. 切换设备的 WiFi 
+     5. 对 app 执行操作 (执行配网操作/执行登录退出 等等)
+     6. 输出当前的操作的结果
+     7. 回到第二步第四步骤
+     8. 把所有的测试结果写到 html 文件当中.
+    """
+    # 1. 获取设备信息
     device_dict = get_device()
     for device in device_dict.values():
         print("current test device model: " + device.model + ", is online: " + str(device.isOnline()))
         if not device.isOnline():
             continue
+
         connected_device = uiautomator2.connect_usb(serial=device.deviceId)
+        # 2. 获取 app 信息
         get_app_info(connected_device, current_test_package)
-        connect_to_wifi("Matthew_5G", "785174509")
+        # 3. 执行收集手机log的任务
         """
             暂时以线程的方式实现
         """
         thread = threading.Thread(target=catch_device_log, args=(device, current_test_package))
         thread.start()
+        # 4. 切换设备的 WiFi
+        connect_to_wifi("Matthew_5G", "785174509")
+        connected_device.press("home")
+        for i in range(100):
+            time.sleep(3)
+            execute_cmd(start_and_stop_app(device.deviceId, current_test_package))
+
         print(connected_device.device_info)
         print("============ device = " + str(device))
         hello = Utils.get_running_app_pid("com.xuwanjin.myapplication", device.deviceId)
