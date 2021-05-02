@@ -89,7 +89,7 @@ def catch_device_log(device: Android_Device, package_name: str):
     再次检查一下设备是否在线
     """
     realTimeDevice = get_device()[device.deviceId]
-    print("-----------------" + str(realTimeDevice.isOnline()))
+    print("check the device is online: " + str(realTimeDevice.isOnline()))
     if not realTimeDevice.isOnline():
         return
 
