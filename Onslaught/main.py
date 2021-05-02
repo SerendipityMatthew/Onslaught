@@ -85,6 +85,26 @@ def connect_to_wifi(wifi_name, wifi_password):
     time.sleep(3)
 
 
+def connect_to_wifi_with_app(uiauto_device:uiautomator2, wifi_name, wifi_password):
+    is_existed = Utils.is_onslaught_app_installed(uiauto_device.deviceId)
+    save_setting_id = "com.android.settings:id/save"
+    if is_existed:
+        uiautomator = uiautomator2.connect_usb(serial=uiauto_device.deviceId)
+        uiautomator.app_start(package_name=onslaughtapp_package)
+        uiautomator(resourceId=onslaughtapp_resource_id + "wifi_ssid").clear_text()
+        uiautomator(resourceId=onslaughtapp_resource_id + "wifi_ssid").set_text(wifi_name)
+        uiautomator(resourceId=onslaughtapp_resource_id + "wifi_password").send_keys(wifi_password)
+        uiautomator(resourceId=onslaughtapp_resource_id + "connect_to_wifi").click()
+        print("the android version of current test device is : " + uiauto_device.version)
+        """
+         对于 android 11 以及以上的系统, 会出现一个系统的弹窗让用户需选择
+        """
+        if int(uiauto_device.version) >= 11:
+            uiautomator(resourceId=save_setting_id).click()
+        time.sleep(6)
+
+
+
 def catch_device_log(device: Android_Device, package_name: str):
     if not device.isOnline():
         return
@@ -197,13 +217,15 @@ if __name__ == '__main__':
         # 4. 切换设备的 WiFi
         wifi_list = Utils.parse_wifi_list_json()
         for wifi_item in wifi_list:
-            connect_to_wifi(wifi_item.ssid, wifi_item.password)
+            # connect_to_wifi(wifi_item.ssid, wifi_item.password)
+            print("the current test wifi item: " + str(wifi_item))
+            connect_to_wifi_with_app(device, wifi_item.ssid, wifi_item.password)
             connected_device.press("home")
             for i in range(4):
                 time.sleep(3)
                 test_result = execute_cmd(start_and_stop_app(device.deviceId, current_test_package))
-                test_case = TestCase(device, app_info, test_result="pass", wifi_info=wifi_item,
-                                     failed_reason="")
+                test_case = TestCase(device, app_info, test_result="pass",
+                                     wifi_info=wifi_item, failed_reason="")
                 test_case_list.append(test_case)
                 print("the test result: " + str(test_result))
 

@@ -5,6 +5,7 @@ import socket
 import uiautomator2 as uiautomator2
 import Device
 from WiFi_Info import WiFi_Info
+from main import onslaughtapp_package, onslaughtapp_resource_id
 
 key_build_version_release = "ro.build.version.release"
 key_product_model = "ro.product.model"
