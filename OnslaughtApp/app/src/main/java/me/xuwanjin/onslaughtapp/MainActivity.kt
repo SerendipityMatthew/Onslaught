@@ -13,6 +13,7 @@ import android.net.wifi.*
 import android.net.wifi.hotspot2.PasspointConfiguration
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -94,7 +95,7 @@ class MainActivity : AppCompatActivity() {
             for (scanResult in mWifiList) {
                 Log.d(TAG, "scanWifiInfo: scanResult.SSID = " + scanResult.SSID)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    connectWifiAndroidQSuggestions(wifiSsid.text.trim().toString(), wifiPassword.text.trim().toString())
+                    connectWifiAndroidQSaveNetwork(wifiSsid.text.trim().toString(), wifiPassword.text.trim().toString())
                 } else {
                     connectWifi(
                         wifiSsid.text.trim().toString(),
@@ -118,7 +119,6 @@ class MainActivity : AppCompatActivity() {
         val suggestionsList = listOf( suggestion2)
 
         val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager;
-
         val status = wifiManager.addNetworkSuggestions(suggestionsList);
         if (status != WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS) {
             // do error handling here
@@ -218,6 +218,58 @@ class MainActivity : AppCompatActivity() {
                 break
             }
         }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == RESULT_OK) {
+            // user agreed to save configurations: still need to check individual results
+            if (data != null && data.hasExtra(Settings.EXTRA_WIFI_NETWORK_RESULT_LIST)) {
+                for (code in data.getIntegerArrayListExtra(Settings.EXTRA_WIFI_NETWORK_RESULT_LIST)!!) {
+                    when (code) {
+                        Settings.ADD_WIFI_RESULT_SUCCESS -> {
+
+                        }
+                        Settings.ADD_WIFI_RESULT_ADD_OR_UPDATE_FAILED -> {
+
+                        }
+                        Settings.ADD_WIFI_RESULT_ALREADY_EXISTS -> {
+
+                        }
+                        else -> {
+
+                        }
+                    }
+                }
+            }
+        } else {
+            // User refused to save configurations
+        }
+    }
+
+    /**
+     *
+     */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun connectWifiAndroidQSaveNetwork(ssid:String, password:String) {
+        val suggestions = ArrayList<WifiNetworkSuggestion>()
+
+        // WPA2 configuration
+        suggestions.add(
+            WifiNetworkSuggestion.Builder()
+                .setSsid(ssid)
+                .setWpa2Passphrase(password)
+                .build()
+        )
+
+        // Create intent
+        val bundle = Bundle()
+        bundle.putParcelableArrayList(Settings.EXTRA_WIFI_NETWORK_LIST, suggestions)
+        val intent = Intent(Settings.ACTION_WIFI_ADD_NETWORKS)
+        intent.putExtras(bundle)
+
+        // Launch intent
+        startActivityForResult(intent, 0)
     }
 }
 
