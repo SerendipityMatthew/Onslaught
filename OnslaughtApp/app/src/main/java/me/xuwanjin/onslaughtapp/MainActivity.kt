@@ -85,38 +85,44 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun scanWifiInfo() {
-        @SuppressLint("WifiManagerLeak") val mWifiManager = getSystemService(WIFI_SERVICE) as WifiManager
-        mWifiManager.isWifiEnabled = true
-        mWifiManager.startScan()
-        mWifiList.clear()
-        mWifiList = mWifiManager.scanResults as ArrayList<ScanResult>
-        Log.d(TAG, "scanWifiInfo: mWifiList.size() = " + mWifiList.size)
-        if (mWifiList != null && mWifiList.size > 0) {
-            for (scanResult in mWifiList) {
-                Log.d(TAG, "scanWifiInfo: scanResult.SSID = " + scanResult.SSID)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    connectWifiAndroidQSaveNetwork(wifiSsid.text.trim().toString(), wifiPassword.text.trim().toString())
-                } else {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            connectWifiAndroidQSaveNetwork(
+                wifiSsid.text.trim().toString(),
+                wifiPassword.text.trim().toString()
+            )
+        } else {
+            @SuppressLint("WifiManagerLeak")
+            val mWifiManager = getSystemService(WIFI_SERVICE) as WifiManager
+            mWifiManager.isWifiEnabled = true
+            mWifiManager.startScan()
+            mWifiList.clear()
+            mWifiList = mWifiManager.scanResults as ArrayList<ScanResult>
+            Log.d(TAG, "scanWifiInfo: mWifiList.size() = " + mWifiList.size)
+            if (mWifiList.size > 0) {
+                for (scanResult in mWifiList) {
+                    Log.d(TAG, "scanWifiInfo: scanResult.SSID = " + scanResult.SSID)
+
                     connectWifi(
                         wifiSsid.text.trim().toString(),
                         wifiPassword.text.trim().toString(),
                         WIFI_ENCRYPT_WPA
                     )
+                    return
                 }
-                return
             }
         }
+
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun connectWifiAndroidQSuggestions(ssid:String, password:String) {
+    fun connectWifiAndroidQSuggestions(ssid: String, password: String) {
         val suggestion2 = WifiNetworkSuggestion.Builder()
             .setSsid(ssid)
             .setWpa2Passphrase(password)
             .setIsAppInteractionRequired(true) // Optional (Needs location permission)
             .build()
 
-        val suggestionsList = listOf( suggestion2)
+        val suggestionsList = listOf(suggestion2)
 
         val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager;
         val status = wifiManager.addNetworkSuggestions(suggestionsList);
@@ -251,7 +257,7 @@ class MainActivity : AppCompatActivity() {
      *
      */
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun connectWifiAndroidQSaveNetwork(ssid:String, password:String) {
+    fun connectWifiAndroidQSaveNetwork(ssid: String, password: String) {
         val suggestions = ArrayList<WifiNetworkSuggestion>()
 
         // WPA2 configuration
