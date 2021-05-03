@@ -2,17 +2,16 @@ package me.xuwanjin.onslaughtapp
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.*
 import android.net.ConnectivityManager.NetworkCallback
 import android.net.wifi.*
-import android.net.wifi.hotspot2.PasspointConfiguration
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.View
@@ -228,10 +227,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        Log.d(TAG, "onActivityResult: resultCode = $resultCode")
+        Log.d(TAG, "onActivityResult: requestCode = $requestCode")
+
         if (resultCode == RESULT_OK) {
             // user agreed to save configurations: still need to check individual results
             if (data != null && data.hasExtra(Settings.EXTRA_WIFI_NETWORK_RESULT_LIST)) {
                 for (code in data.getIntegerArrayListExtra(Settings.EXTRA_WIFI_NETWORK_RESULT_LIST)!!) {
+                    Log.d(TAG, "onActivityResult: code = $code")
                     when (code) {
                         Settings.ADD_WIFI_RESULT_SUCCESS -> {
 
@@ -267,15 +270,41 @@ class MainActivity : AppCompatActivity() {
                 .setWpa2Passphrase(password)
                 .build()
         )
-
+        /**
+         *  先移除掉之前的WiFi 网络, 然后再发起一个,
+         *  在 RedMiFi K30 5g ,android 11 的系统上如果不这么做, 无法再切换一个之前已经连接的 WiFi 网络
+         */
+        removeWifiAndroidQSaveNetwork(ssid, password)
+        Log.d(TAG, "connectWifiAndroidQSaveNetwork: ")
         // Create intent
-        val bundle = Bundle()
-        bundle.putParcelableArrayList(Settings.EXTRA_WIFI_NETWORK_LIST, suggestions)
-        val intent = Intent(Settings.ACTION_WIFI_ADD_NETWORKS)
-        intent.putExtras(bundle)
+        Handler(Looper.myLooper()!!).postDelayed(
+            Runnable {
+                val bundle = Bundle()
+                bundle.putParcelableArrayList(Settings.EXTRA_WIFI_NETWORK_LIST, suggestions)
+                val intent = Intent(Settings.ACTION_WIFI_ADD_NETWORKS)
+                intent.putExtras(bundle)
 
-        // Launch intent
-        startActivityForResult(intent, 0)
+                // Launch intent
+                startActivityForResult(intent, 0)
+            }, 3000
+        )
+
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun removeWifiAndroidQSaveNetwork(ssid: String, password: String) {
+        val removeSuggestionList = ArrayList<WifiNetworkSuggestion>()
+
+        // WPA2 configuration
+        removeSuggestionList.add(
+            WifiNetworkSuggestion.Builder()
+                .setSsid(ssid)
+                .setWpa2Passphrase(password)
+                .build()
+        )
+        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager;
+        val status = wifiManager.removeNetworkSuggestions(removeSuggestionList);
+
     }
 }
 
