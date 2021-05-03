@@ -85,8 +85,12 @@ def connect_to_wifi(wifi_name, wifi_password):
     time.sleep(3)
 
 
-def connect_to_wifi_with_app(uiauto_device:Android_Device, wifi_name, wifi_password):
+def connect_to_wifi_with_app(uiauto_device: Android_Device, wifi_name, wifi_password):
     is_existed = Utils.is_onslaught_app_installed(uiauto_device.device_serial)
+    current_ssid = Utils.get_wifi_ssid(uiauto_device.device_serial)
+    print("the wifi which " + uiauto_device.device_serial + " had been connected to wifi " + current_ssid)
+    if current_ssid.__eq__(wifi_name):
+        return
     save_setting_id = "com.android.settings:id/save"
     if is_existed:
         uiautomator = uiautomator2.connect_usb(serial=uiauto_device.device_serial)
@@ -102,7 +106,6 @@ def connect_to_wifi_with_app(uiauto_device:Android_Device, wifi_name, wifi_passw
         if int(uiauto_device.version) >= 11:
             uiautomator(resourceId=save_setting_id).click()
         time.sleep(6)
-
 
 
 def catch_device_log(device: Android_Device, package_name: str):

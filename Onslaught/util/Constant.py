@@ -1,0 +1,2 @@
+TEST_RESULT_PASS = "pass"
+TEST_RESULT_FAILED = "failed"
