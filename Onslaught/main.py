@@ -33,6 +33,7 @@ wifi_matthew_password = "785174509"
 wifi_switch_widget_resource_id = "com.android.settings:id/switch_widget"
 wifi_name = wifi_219_name
 wifi_password = wifi_219_password
+is_start_test_parallel = True
 
 
 def strip_str_for_prop(prop):
@@ -60,28 +61,29 @@ def get_device():
     return device_dict
 
 
-def connect_to_wifi(wifi_name, wifi_password):
-    connected_device.app_start(package_name=settings_package,
+def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
+    uiAuto = uiautomator2.connect_usb(serial=device_serial)
+    uiAuto.app_start(package_name=settings_package,
                                activity=rom_settings_wifi_activity)
     time.sleep(2)
-    if not connected_device(text=wifi_name).exists:
-        connected_device.swipe(300, 900, 300, 200)
+    if not uiAuto(text=wifi_name).exists:
+        uiAuto.swipe(300, 900, 300, 200)
 
-    connected_device(text=wifi_name).click()
+    uiAuto(text=wifi_name).click()
     """
         在某些情况下, 这个设备已经连接过这个 WiFi 了, 执行 sendkeys 会报错, 
     """
     try:
-        connected_device.send_keys(wifi_password, clear=True)
+        uiAuto.send_keys(wifi_password, clear=True)
     except UiObjectNotFoundError as error:
         print(error)
     finally:
-        if connected_device(text="连接").exists():
-            connected_device(text="连接").click()
-        if connected_device(text="Connect").exists():
-            connected_device(text="Connect").click()
-        if connected_device(text="CONNECT").exists():
-            connected_device(text="CONNECT").click()
+        if uiAuto(text="连接").exists():
+            uiAuto(text="连接").click()
+        if uiAuto(text="Connect").exists():
+            uiAuto(text="Connect").click()
+        if uiAuto(text="CONNECT").exists():
+            uiAuto(text="CONNECT").click()
     time.sleep(3)
 
 
@@ -188,6 +190,38 @@ def start_and_stop_app(device_serial: str, package_name: str):
     return True
 
 
+def start_device_test(device: Android_Device):
+    if not device.isOnline():
+        return
+
+    connected_device = uiautomator2.connect_usb(serial=device.device_serial)
+    Utils.set_device_never_sleep(device.device_serial)
+    # 2. 获取 app 信息
+    app_info = get_app_info(connected_device, current_test_package)
+    # 3. 执行收集手机log的任务
+    """
+        暂时以线程的方式实现
+    """
+    thread = threading.Thread(target=catch_device_log, args=(device, current_test_package))
+    thread.start()
+    # 4. 切换设备的 WiFi
+    wifi_list = Utils.parse_wifi_list_json()
+    for wifi_item in wifi_list:
+        # connect_to_wifi(wifi_item.ssid, wifi_item.password)
+        print("the current test wifi item: " + str(wifi_item))
+        connect_to_wifi_with_app(device, wifi_item.ssid, wifi_item.password)
+        connected_device.press("home")
+        for i in range(4):
+            time.sleep(3)
+            test_result = execute_cmd(start_and_stop_app(device.device_serial, current_test_package))
+            test_case = TestCase(device, app_info, test_result="pass",
+                                 wifi_info=wifi_item, failed_reason="")
+            test_case_list.append(test_case)
+            print("the test result: " + str(test_result))
+
+        print(connected_device.device_info)
+
+
 if __name__ == '__main__':
     """
      1. 获取设备信息
@@ -200,39 +234,16 @@ if __name__ == '__main__':
      8. 把所有的测试结果写到 html 文件当中.
     """
     # 1. 获取设备信息
-    device_dict = get_device()
+    all_device_dict = get_device()
     test_case_list = []
-    for device in device_dict.values():
-        print("current test device model: " + device.model + ", is online: " + str(device.isOnline()))
-        if not device.isOnline():
-            continue
+    for test_device in all_device_dict.values():
+        print("current test device model: " + test_device.model + ", is online: " + str(test_device.isOnline()))
 
-        connected_device = uiautomator2.connect_usb(serial=device.device_serial)
-        Utils.set_device_never_sleep(device.device_serial)
-        # 2. 获取 app 信息
-        app_info = get_app_info(connected_device, current_test_package)
-        # 3. 执行收集手机log的任务
-        """
-            暂时以线程的方式实现
-        """
-        thread = threading.Thread(target=catch_device_log, args=(device, current_test_package))
-        thread.start()
-        # 4. 切换设备的 WiFi
-        wifi_list = Utils.parse_wifi_list_json()
-        for wifi_item in wifi_list:
-            # connect_to_wifi(wifi_item.ssid, wifi_item.password)
-            print("the current test wifi item: " + str(wifi_item))
-            connect_to_wifi_with_app(device, wifi_item.ssid, wifi_item.password)
-            connected_device.press("home")
-            for i in range(4):
-                time.sleep(3)
-                test_result = execute_cmd(start_and_stop_app(device.device_serial, current_test_package))
-                test_case = TestCase(device, app_info, test_result="pass",
-                                     wifi_info=wifi_item, failed_reason="")
-                test_case_list.append(test_case)
-                print("the test result: " + str(test_result))
-
-            print(connected_device.device_info)
+        if is_start_test_parallel:
+            device_thread = threading.Thread(target=start_device_test, args={test_device})
+            device_thread.start()
+        else:
+            start_device_test(test_device)
 
     for case in test_case_list:
         print("   " + str(case))
