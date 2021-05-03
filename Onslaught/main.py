@@ -64,7 +64,7 @@ def get_device():
 def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
     uiAuto = uiautomator2.connect_usb(serial=device_serial)
     uiAuto.app_start(package_name=settings_package,
-                               activity=rom_settings_wifi_activity)
+                     activity=rom_settings_wifi_activity)
     time.sleep(2)
     if not uiAuto(text=wifi_name).exists:
         uiAuto.swipe(300, 900, 300, 200)
@@ -105,7 +105,12 @@ def connect_to_wifi_with_app(uiauto_device: Android_Device, wifi_name, wifi_pass
         """
          对于 android 11 以及以上的系统, 会出现一个系统的弹窗让用户需选择
         """
-        if int(uiauto_device.version) >= 11:
+        version = str(uiauto_device.version)
+        if version.__contains__("."):
+            ver = version.split(".")[0]
+            if int(ver) >= 11:
+                uiautomator(resourceId=save_setting_id).click()
+        elif int(uiauto_device.version) >= 11:
             uiautomator(resourceId=save_setting_id).click()
         time.sleep(6)
 
@@ -184,6 +189,9 @@ def execute_cmd(func):
 
 def start_and_stop_app(device_serial: str, package_name: str):
     uiautomator = uiautomator2.connect_usb(serial=device_serial)
+    is_app_installed = Utils.is_app_installed(device_serial, package_name)
+    if not is_app_installed:
+        return False
     uiautomator.app_start(package_name=package_name)
     time.sleep(5)
     uiautomator.app_stop(package_name=package_name)

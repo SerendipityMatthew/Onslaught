@@ -187,6 +187,13 @@ def is_onslaught_app_installed(device_serial):
     return False
 
 
+def is_app_installed(device_serial:str, package_name: str):
+    package_location_cmd = "adb -s " + device_serial + " shell pm path " + package_name
+    result = subprocess.getstatusoutput(package_location_cmd)
+    if result[1].__contains__(package_name):
+        return True
+    return False
+
 def set_device_never_sleep(device_serial: str):
     """
     设置设备永不睡眠的模式
