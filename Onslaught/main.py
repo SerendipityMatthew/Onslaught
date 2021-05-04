@@ -62,12 +62,23 @@ def get_device():
 
 
 def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
+    # android.settings.WIFI_SETTINGS
+    Utils.switch_on_wifi(device_serial)
+    wifi_intent = "android.settings.WIFI_SETTINGS"
+    start_wifi_activity = "adb -s " + device_serial + " shell am start -a " + wifi_intent
+    subprocess.getstatusoutput(start_wifi_activity)
+    time.sleep(3)
     uiAuto = uiautomator2.connect_usb(serial=device_serial)
-    uiAuto.app_start(package_name=settings_package,
-                     activity=rom_settings_wifi_activity)
-    time.sleep(2)
+
     if not uiAuto(text=wifi_name).exists:
         uiAuto.swipe(300, 900, 300, 200)
+
+    if not uiAuto(text=wifi_name).exists:
+        uiAuto.swipe(300, 900, 300, 200)
+
+    if not uiAuto(text=wifi_name).exists:
+        print("finally we have not found the wifi: " + wifi_name)
+        return
 
     uiAuto(text=wifi_name).click()
     """
@@ -84,7 +95,7 @@ def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
             uiAuto(text="Connect").click()
         if uiAuto(text="CONNECT").exists():
             uiAuto(text="CONNECT").click()
-    time.sleep(3)
+    time.sleep(5)
 
 
 def connect_to_wifi_with_app(uiauto_device: Android_Device, wifi_name, wifi_password):
@@ -217,7 +228,7 @@ def start_device_test(device: Android_Device):
     for wifi_item in wifi_list:
         # connect_to_wifi(wifi_item.ssid, wifi_item.password)
         print("the current test wifi item: " + str(wifi_item))
-        connect_to_wifi_with_app(device, wifi_item.ssid, wifi_item.password)
+        connect_to_wifi(device.device_serial, wifi_item.ssid, wifi_item.password)
         connected_device.press("home")
         for i in range(4):
             time.sleep(3)

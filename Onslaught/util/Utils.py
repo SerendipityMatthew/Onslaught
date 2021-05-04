@@ -187,12 +187,13 @@ def is_onslaught_app_installed(device_serial):
     return False
 
 
-def is_app_installed(device_serial:str, package_name: str):
+def is_app_installed(device_serial: str, package_name: str):
     package_location_cmd = "adb -s " + device_serial + " shell pm path " + package_name
     result = subprocess.getstatusoutput(package_location_cmd)
     if result[1].__contains__(package_name):
         return True
     return False
+
 
 def set_device_never_sleep(device_serial: str):
     """
@@ -219,3 +220,15 @@ def parse_wifi_list_json():
                 wifi_list.append(wifi_info)
                 line = wifi_json_file.readline()
     return wifi_list
+
+
+def switch_on_wifi(device_serial: str):
+    # adb shell svc wifi enable
+    switch_on_wifi_cmd = "adb -s " + device_serial + " shell svc wifi enable"
+    subprocess.getstatusoutput(switch_on_wifi_cmd)
+
+
+def switch_off_wifi(device_serial: str):
+    # adb shell svc wifi disable
+    switch_off_wifi_cmd = "adb -s " + device_serial + " shell svc wifi disable"
+    subprocess.getstatusoutput(switch_off_wifi_cmd)
