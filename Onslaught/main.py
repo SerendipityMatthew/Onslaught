@@ -62,6 +62,7 @@ def get_device():
 
 
 def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
+    print("the device " + device_serial + " try to connect the wifi " + wifi_name)
     # android.settings.WIFI_SETTINGS
     Utils.switch_on_wifi(device_serial)
     uiAuto = uiautomator2.connect_usb(serial=device_serial)
@@ -74,16 +75,14 @@ def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
     wifi_intent = "android.settings.WIFI_SETTINGS"
     start_wifi_activity = "adb -s " + device_serial + " shell am start -a " + wifi_intent
     subprocess.getstatusoutput(start_wifi_activity)
-    time.sleep(3)
+    time.sleep(10)
 
     if not uiAuto(text=wifi_name).exists:
         uiAuto.swipe(300, 900, 300, 200)
-
-    if not uiAuto(text=wifi_name).exists:
-        uiAuto.swipe(300, 900, 300, 200)
-
-    if not uiAuto(text=wifi_name).exists:
-        uiAuto.swipe(300, 900, 300, 200)
+        if not uiAuto(text=wifi_name).exists:
+            uiAuto.swipe(300, 900, 300, 200)
+            if not uiAuto(text=wifi_name).exists:
+                uiAuto.swipe(300, 900, 300, 200)
 
     if not uiAuto(text=wifi_name).exists:
         print("finally we have not found the wifi: " + wifi_name)
@@ -97,17 +96,22 @@ def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
         uiAuto.send_keys(wifi_password, clear=True)
         if uiAuto(text="连接").exists():
             uiAuto(text="连接").click()
-        if uiAuto(text="Connect").exists():
-            uiAuto(text="Connect").click()
-        if uiAuto(text="CONNECT").exists():
-            uiAuto(text="CONNECT").click()
+        else:
+            if uiAuto(text="Connect").exists():
+                uiAuto(text="Connect").click()
+            else:
+                if uiAuto(text="CONNECT").exists():
+                    uiAuto(text="CONNECT").click()
     except UiObjectNotFoundError as error:
         print(error)
         if uiAuto(text="Frequency").exists():
             print("the device had been connected to the wifi " + wifi_name)
     finally:
         pass
-
+    time.sleep(5)
+    """
+     等待 几秒钟, 这样才会dump出wifi的信息
+    """
     device_wifi_name = Utils.get_wifi_ssid(device_serial)
     if device_wifi_name.__eq__(wifi_name):
         print("hi, the device switch to " + wifi_name + ", successfully! ")
@@ -246,6 +250,11 @@ def start_device_test(device: Android_Device):
         print("the current test wifi item: " + str(wifi_item))
         connect_to_wifi(device.device_serial, wifi_item.ssid, wifi_item.password)
         connected_device.press("home")
+        """
+        
+        """
+        time.sleep(3)
+
         for i in range(4):
             time.sleep(3)
             test_result = execute_cmd(start_and_stop_app(device.device_serial, current_test_package))

@@ -13,13 +13,14 @@ key_product_locale_language = "ro.product.locale.language"
 
 
 def get_wifi_ssid(device_serial: str):
-    dump_wifi_cmd = "adb shell " + device_serial + "dumpsys wifi"
+    dump_wifi_cmd = "adb -s " + device_serial + " shell dumpsys wifi"
     wifi_ssid = ""
     dump_wifi_cmd_result = subprocess.getstatusoutput(dump_wifi_cmd)
     wifi_sys__info = dump_wifi_cmd_result[1].split("\n")
     for line in wifi_sys__info:
         if str(line).__contains__("mWifiInfo SSID: "):
             if line.__contains__("Supplicant state: COMPLETED"):
+                print("line = " + line)
                 wifi_info = line.split(",")
                 for info in wifi_info:
                     if info.__contains__("mWifiInfo SSID:"):
@@ -29,9 +30,9 @@ def get_wifi_ssid(device_serial: str):
         else:
             pass
     if wifi_ssid.__eq__(""):
-        print("have not get the wifi ssid which device had been connected: ")
+        print("have not get the wifi ssid which device had been connected: " + " the device: " + device_serial)
     else:
-        print("get the wifi ssid which device had been connected, wifi ssid: " + wifi_ssid)
+        print("get the wifi ssid which device had been connected, wifi ssid: " + wifi_ssid + " the device: " + device_serial)
     return wifi_ssid
 
 
@@ -151,7 +152,6 @@ def switch_on_device_screen(device_serial: str):
         pass
     else:
         subprocess.getstatusoutput(switch_on_cmd)
-
 
 def get_running_app_pid(package_name: str, device_serial: str):
     """
