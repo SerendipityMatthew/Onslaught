@@ -92,7 +92,8 @@ def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
     """
         在某些情况下, 这个设备已经连接过这个 WiFi 了, 执行 sendkeys 会报错, 
     """
-    if uiAuto(text="Show password").exists():
+
+    if uiAuto(text="Advanced options").exists() or uiAuto(text="高级选项").exists():
         try:
             uiAuto.send_keys(wifi_password, clear=True)
             if uiAuto(text="连接").exists():
