@@ -64,11 +64,20 @@ def get_device():
 def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
     # android.settings.WIFI_SETTINGS
     Utils.switch_on_wifi(device_serial)
+    uiAuto = uiautomator2.connect_usb(serial=device_serial)
+    """
+      即使通过 start -a android.settings.WIFI_SETTINGS 进入到界面
+      也有可能是在其他的界面(比如当前已经连接的 WiFi的信息界面. 我们必须杀死进程才能再次进去
+    """
+    uiAuto.app_stop("com.android.settings")
+    time.sleep(2)
     wifi_intent = "android.settings.WIFI_SETTINGS"
     start_wifi_activity = "adb -s " + device_serial + " shell am start -a " + wifi_intent
     subprocess.getstatusoutput(start_wifi_activity)
     time.sleep(3)
-    uiAuto = uiautomator2.connect_usb(serial=device_serial)
+
+    if not uiAuto(text=wifi_name).exists:
+        uiAuto.swipe(300, 900, 300, 200)
 
     if not uiAuto(text=wifi_name).exists:
         uiAuto.swipe(300, 900, 300, 200)
@@ -86,15 +95,22 @@ def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
     """
     try:
         uiAuto.send_keys(wifi_password, clear=True)
-    except UiObjectNotFoundError as error:
-        print(error)
-    finally:
         if uiAuto(text="连接").exists():
             uiAuto(text="连接").click()
         if uiAuto(text="Connect").exists():
             uiAuto(text="Connect").click()
         if uiAuto(text="CONNECT").exists():
             uiAuto(text="CONNECT").click()
+    except UiObjectNotFoundError as error:
+        print(error)
+        if uiAuto(text="Frequency").exists():
+            print("the device had been connected to the wifi " + wifi_name)
+    finally:
+        pass
+
+    device_wifi_name = Utils.get_wifi_ssid(device_serial)
+    if device_wifi_name.__eq__(wifi_name):
+        print("hi, the device switch to " + wifi_name + ", successfully! ")
     time.sleep(5)
 
 
