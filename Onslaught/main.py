@@ -85,7 +85,7 @@ def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
                 uiAuto.swipe(300, 900, 300, 200)
 
     if not uiAuto(text=wifi_name).exists:
-        print("finally we have not found the wifi: " + wifi_name)
+        print("finally we have not found the wifi: " + wifi_name + ", for device: " + device_serial)
         return
 
     uiAuto(text=wifi_name).click()
