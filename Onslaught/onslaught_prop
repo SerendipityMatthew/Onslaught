@@ -1,0 +1,3 @@
+is_start_test_parallel=True
+current_test_package=com.deye
+only_collect_test_app_log=True
