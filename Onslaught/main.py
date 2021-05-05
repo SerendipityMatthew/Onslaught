@@ -50,7 +50,6 @@ def get_device():
         for devices_id_record in devices_list:
             serial = devices_id_record.split("\t")[0]
             is_online = devices_id_record.split("\t")[1]
-            print("is online = " + str(is_online))
             key_is_online = True
             if is_online.__contains__("offline"):
                 key_is_online = False
@@ -69,13 +68,14 @@ def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
     """
       即使通过 start -a android.settings.WIFI_SETTINGS 进入到界面
       也有可能是在其他的界面(比如当前已经连接的 WiFi的信息界面. 我们必须杀死进程才能再次进去
+      进去的时候 等待 20s, 增加等待时长, 有时候需要自动连接, 需要等待更长的时间
     """
     uiAuto.app_stop("com.android.settings")
     time.sleep(2)
     wifi_intent = "android.settings.WIFI_SETTINGS"
     start_wifi_activity = "adb -s " + device_serial + " shell am start -a " + wifi_intent
     subprocess.getstatusoutput(start_wifi_activity)
-    time.sleep(10)
+    time.sleep(20)
 
     if not uiAuto(text=wifi_name).exists:
         uiAuto.swipe(300, 900, 300, 200)
@@ -92,26 +92,28 @@ def connect_to_wifi(device_serial: str, wifi_name, wifi_password):
     """
         在某些情况下, 这个设备已经连接过这个 WiFi 了, 执行 sendkeys 会报错, 
     """
-    try:
-        uiAuto.send_keys(wifi_password, clear=True)
-        if uiAuto(text="连接").exists():
-            uiAuto(text="连接").click()
-        else:
-            if uiAuto(text="Connect").exists():
-                uiAuto(text="Connect").click()
+    if uiAuto(text="Show password").exists():
+        try:
+            uiAuto.send_keys(wifi_password, clear=True)
+            if uiAuto(text="连接").exists():
+                uiAuto(text="连接").click()
             else:
-                if uiAuto(text="CONNECT").exists():
-                    uiAuto(text="CONNECT").click()
-    except UiObjectNotFoundError as error:
-        print(error)
-        if uiAuto(text="Frequency").exists():
-            print("the device had been connected to the wifi " + wifi_name)
-    finally:
-        pass
-    time.sleep(5)
+                if uiAuto(text="Connect").exists():
+                    uiAuto(text="Connect").click()
+                else:
+                    if uiAuto(text="CONNECT").exists():
+                        uiAuto(text="CONNECT").click()
+        except UiObjectNotFoundError as error:
+            print(error)
+            if uiAuto(text="Frequency").exists():
+                print("the device had been connected to the wifi " + wifi_name)
+        finally:
+            pass
     """
      等待 几秒钟, 这样才会dump出wifi的信息
     """
+    time.sleep(5)
+
     device_wifi_name = Utils.get_wifi_ssid(device_serial)
     if device_wifi_name.__eq__(wifi_name):
         print("hi, the device switch to " + wifi_name + ", successfully! ")
