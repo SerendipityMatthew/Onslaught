@@ -60,6 +60,7 @@ def catch_device_log(device: Android_Device, package_name: str):
     logcat_cmd = "adb -s " + realTimeDevice.device_serial + " logcat -b all"
     log_file = open(log_file_path, "w")
     result = subprocess.Popen(logcat_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    line_list = list()
     for line in iter(result.stdout.readline, "b"):
         current_date = time.strftime("%Y-%m-%d_%H", time.localtime())
         if current_date.__eq__(current_test_date):
@@ -67,8 +68,11 @@ def catch_device_log(device: Android_Device, package_name: str):
             if lineStr.__eq__("\n"):
                 pass
             else:
-                log_file.write(lineStr)
-                log_file.flush()
+                line_list.append(lineStr)
+                if line_list.__len__() > 30000:
+                    log_file.writelines(line_list)
+                    log_file.flush()
+                    line_list.clear()
 
         else:
             print("进入下一个小时的, 收集手机 log 的阶段")
