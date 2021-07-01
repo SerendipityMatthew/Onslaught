@@ -69,7 +69,7 @@ def catch_device_log(device: Android_Device, package_name: str):
                 pass
             else:
                 line_list.append(lineStr)
-                if line_list.__len__() > 30000:
+                if line_list.__len__() > 5000:
                     log_file.writelines(line_list)
                     log_file.flush()
                     line_list.clear()
