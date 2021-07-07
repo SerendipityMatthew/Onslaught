@@ -69,7 +69,7 @@ def catch_device_log(device: Android_Device, package_name: str):
     for line in iter(result.stdout.readline, "b"):
         current_date = time.strftime("%Y-%m-%d_%H", time.localtime())
         if current_date.__eq__(current_test_date):
-            lineStr = line.decode(get_system_encoding, "ignore")
+            lineStr = line.decode(get_system_encoding(), "ignore")
             if lineStr.__eq__("\n"):
                 pass
             else:
