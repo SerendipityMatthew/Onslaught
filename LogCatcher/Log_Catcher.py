@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import threading
 import time
 
@@ -9,6 +10,10 @@ from Device import Android_Device
 adb_devices_cmd = "adb devices"
 zgrill_package = "com.mxchip.zgrill"
 current_test_package = zgrill_package
+
+
+def get_system_encoding():
+    return sys.getdefaultencoding()
 
 
 def get_device():
@@ -64,7 +69,7 @@ def catch_device_log(device: Android_Device, package_name: str):
     for line in iter(result.stdout.readline, "b"):
         current_date = time.strftime("%Y-%m-%d_%H", time.localtime())
         if current_date.__eq__(current_test_date):
-            lineStr = line.decode("gbk", "ignore").strip("\n")
+            lineStr = line.decode(get_system_encoding, "ignore")
             if lineStr.__eq__("\n"):
                 pass
             else:
