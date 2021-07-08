@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import os
 import subprocess
 import sys
@@ -63,17 +65,20 @@ def catch_device_log(device: Android_Device, package_name: str):
 
     print("the log path which we want to save: " + log_file_path)
     logcat_cmd = "adb -s " + realTimeDevice.device_serial + " logcat -b all"
-    log_file = open(log_file_path, "w")
+    encoding = get_system_encoding()
+    log_file = open(log_file_path, "w", encoding=encoding)
     result = subprocess.Popen(logcat_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     line_list = list()
+    print("the encoding of the system = " + encoding)
     for line in iter(result.stdout.readline, "b"):
         current_date = time.strftime("%Y-%m-%d_%H", time.localtime())
         if current_date.__eq__(current_test_date):
-            lineStr = line.decode(get_system_encoding(), "ignore")
-            if lineStr.__eq__("\n"):
+            lineStr = line.decode(encoding, "ignore")
+            stripLine = lineStr.replace("\n", "")
+            if stripLine.__eq__("\n"):
                 pass
             else:
-                line_list.append(lineStr)
+                line_list.append(stripLine)
                 if line_list.__len__() > 5000:
                     log_file.writelines(line_list)
                     log_file.flush()
