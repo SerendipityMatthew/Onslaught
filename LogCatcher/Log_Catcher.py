@@ -13,14 +13,27 @@ adb_devices_cmd = "adb devices"
 current_test_package = ""
 
 
-def log_catcher_package():
+def get_log_catcher_package():
     with open(file="./log_catcher.ini") as f:
         for line in f:
             stripLine = str(line).replace("\n", "")
             if stripLine.__contains__("log_catcher_package"):
                 package_name = stripLine.split("=")[1]
-                return  package_name.replace("\"","").strip()
+                return package_name.replace("\"", "").strip()
+
     return "log_catcher_directory"
+
+
+def is_only_catch_app_log():
+    with open(file="./log_catcher.ini") as f:
+        for line in f:
+            stripLine = str(line).replace("\n", "")
+            if stripLine.__contains__("is_only_catch_app_log"):
+                package_name = stripLine.split("=")[1]
+                if package_name.replace("\"", "").strip().__eq__("True"):
+                    return True
+
+    return False
 
 
 def get_system_encoding():
@@ -100,7 +113,7 @@ def catch_device_log(device: Android_Device, package_name: str):
 
 if __name__ == '__main__':
     all_device_dict = get_device()
-    current_test_package = log_catcher_package()
+    current_test_package = get_log_catcher_package()
     print("the log save path is: " + current_test_package)
     for adb_device in all_device_dict.values():
         print("============= " + str(adb_device))
