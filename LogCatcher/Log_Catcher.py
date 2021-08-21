@@ -10,8 +10,17 @@ import Utils
 from Device import Android_Device
 
 adb_devices_cmd = "adb devices"
-zgrill_package = "com.mxchip.zgrill"
-current_test_package = zgrill_package
+current_test_package = ""
+
+
+def log_catcher_package():
+    with open(file="./log_catcher.ini") as f:
+        for line in f:
+            stripLine = str(line).replace("\n", "")
+            if stripLine.__contains__("log_catcher_package"):
+                package_name = stripLine.split("=")[1]
+                return  package_name.replace("\"","").strip()
+    return "log_catcher_directory"
 
 
 def get_system_encoding():
@@ -91,6 +100,8 @@ def catch_device_log(device: Android_Device, package_name: str):
 
 if __name__ == '__main__':
     all_device_dict = get_device()
+    current_test_package = log_catcher_package()
+    print("the log save path is: " + current_test_package)
     for adb_device in all_device_dict.values():
         print("============= " + str(adb_device))
         device_thread = threading.Thread(target=catch_device_log,
