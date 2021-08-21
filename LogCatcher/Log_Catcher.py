@@ -74,7 +74,7 @@ def catch_device_log(device: Android_Device, package_name: str):
         current_date = time.strftime("%Y-%m-%d_%H", time.localtime())
         if current_date.__eq__(current_test_date):
             lineStr = line.decode(encoding, "ignore")
-            stripLine = lineStr.replace("\n", "")
+            stripLine = lineStr.replace("\n", "") + "\n"
             if stripLine.__eq__("\n"):
                 pass
             else:
